@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Tuition Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Space Grotesk', 'sans-serif'] },
+                    boxShadow: {
+                        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+                        'soft-lg': '0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Space Grotesk', sans-serif; }
+        
+        .sidebar { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .sidebar-closed { transform: translateX(-100%); }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 0;
+            background: #fff;
+            border-radius: 0 2px 2px 0;
+            transition: height 0.2s ease;
+        }
+        .nav-item:hover::before { height: 40%; }
+        .nav-item.active::before { height: 60%; }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.05); }
+        .nav-item.active { background: rgba(255, 255, 255, 0.1); font-weight: 600; }
+        
+        .card-animate { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-animate:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .dropdown { transition: all 0.2s ease; }
+        .dropdown.hidden { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+        
+        .btn-dark {
+            background: #fff;
+            color: #000;
+            transition: all 0.2s ease;
+        }
+        .btn-dark:hover {
+            background: #e5e5e5;
+            transform: translateY(-1px);
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .badge-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        
+        .toast {
+            animation: slideInRight 0.3s ease-out;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-950 min-h-screen">
+    <div id="app" class="flex min-h-screen">
+        <aside id="sidebar" class="sidebar fixed lg:static inset-y-0 left-0 z-50 w-72 bg-black text-white shadow-soft-lg flex flex-col">
+            <div class="p-8 border-b border-white/10">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-xl">Tuition Hub</h1>
+                        <p class="text-xs text-white/50">Admin Portal</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-1">
+                <button onclick="showSection('overview')" class="nav-item active w-full flex items-center gap-4 px-5 py-4 rounded-xl text-white/80" data-section="overview">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                    <span>Overview</span>
+                </button>
+                <button onclick="showSection('users')" class="nav-item w-full flex items-center gap-4 px-5 py-4 rounded-xl text-white/80" data-section="users">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    <span>Students</span>
+                </button>
+                <button onclick="showSection('materials')" class="nav-item w-full flex items-center gap-4 px-5 py-4 rounded-xl text-white/80" data-section="materials">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Materials</span>
+                </button>
+                <button onclick="showSection('schedule')" class="nav-item w-full flex items-center gap-4 px-5 py-4 rounded-xl text-white/80" data-section="schedule">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Schedule</span>
+                </button>
+                <button onclick="showSection('announcements')" class="nav-item w-full flex items-center gap-4 px-5 py-4 rounded-xl text-white/80" data-section="announcements">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                    <span>Announcements</span>
+                </button>
+                <button onclick="showSection('payments')" class="nav-item w-full flex items-center gap-4 px-5 py-4 rounded-xl text-white/80 relative" data-section="payments">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    <span>Payments</span>
+                    <span id="pending-payments-badge" class="hidden absolute right-4 w-5 h-5 bg-white text-black text-xs rounded-full flex items-center justify-center badge-pulse">0</span>
+                </button>
+                <button onclick="showSection('attendance')" class="nav-item w-full flex items-center gap-4 px-5 py-4 rounded-xl text-white/80" data-section="attendance">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                    <span>Attendance</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-white/10">
+                <button onclick="logout()" class="nav-item w-full flex items-center gap-4 px-5 py-4 rounded-xl text-white/60">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+        <main class="flex-1 flex flex-col min-h-screen">
+            <header class="glass-effect sticky top-0 z-30">
+                <div class="flex items-center justify-between px-6 lg:px-10 py-5">
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-white/10 transition">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        </button>
+                        <div>
+                            <h2 id="page-title" class="text-xl font-semibold text-white">Dashboard Overview</h2>
+                            <p class="text-sm text-white/50">Admin: <span id="admin-name" class="text-white/70">Admin</span></p>
+                        </div>
+                    </div>
+                    <button onclick="toggleDarkMode()" class="p-3 rounded-xl hover:bg-white/10 transition">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 p-6 lg:p-10 space-y-8">
+                <div id="section-overview" class="section fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="stat-card rounded-2xl p-6 card-animate">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white/50 mb-1">Total Students</p>
+                                    <p class="text-4xl font-bold text-white" id="stat-students">0</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card rounded-2xl p-6 card-animate">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white/50 mb-1">Active Students</p>
+                                    <p class="text-4xl font-bold text-white" id="stat-active">0</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card rounded-2xl p-6 card-animate">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white/50 mb-1">Pending Payments</p>
+                                    <p class="text-4xl font-bold text-white" id="stat-pending">0</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card rounded-2xl p-6 card-animate">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white/50 mb-1">Materials</p>
+                                    <p class="text-4xl font-bold text-white" id="stat-materials">0</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-users" class="section hidden fade-in">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="lg:col-span-1 bg-black/30 rounded-2xl p-6 border border-white/5">
+                            <h3 class="text-lg font-semibold text-white mb-5">Add New Student</h3>
+                            <form id="add-user-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Name</label>
+                                    <input type="text" id="new-name" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-white/30 outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Mobile</label>
+                                    <input type="tel" id="new-mobile" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-white/30 outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">PIN</label>
+                                    <input type="text" id="new-pin" required maxlength="4" pattern="[0-9]{4}" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-white/30 outline-none transition text-center tracking-widest">
+                                </div>
+                                <button type="submit" class="btn-dark w-full py-3.5 rounded-xl font-semibold mt-6">Add Student</button>
+                            </form>
+                        </div>
+                        <div class="lg:col-span-2 bg-black/30 rounded-2xl p-6 border border-white/5">
+                            <h3 class="text-lg font-semibold text-white mb-5">All Students</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr class="border-b border-white/10">
+                                            <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Name</th>
+                                            <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Mobile</th>
+                                            <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Status</th>
+                                            <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table" class="divide-y divide-white/5"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-materials" class="section hidden fade-in">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="lg:col-span-1 bg-black/30 rounded-2xl p-6 border border-white/5">
+                            <h3 class="text-lg font-semibold text-white mb-5">Add Material</h3>
+                            <form id="add-material-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Title</label>
+                                    <input type="text" id="material-title" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-white/30 outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Type</label>
+                                    <select id="material-type" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-white/30 outline-none transition">
+                                        <option value="link" class="bg-black">Class Link</option>
+                                        <option value="pdf" class="bg-black">PDF Document</option>
+                                    </select>
+                                </div>
+                                <div id="url-input-group">
+                                    <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">URL</label>
+                                    <input type="url" id="material-url" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-white/30 outline-none transition">
+                                </div>
+                                <div id="file-input-group" class="hidden">
+                                    <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Upload PDF</label>
+                                    <input type="file" id="material-file" accept=".pdf" class="w-full text-sm text-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-white file:text-black">
+                                </div>
+                                <button type="submit" class="btn-dark w-full py-3.5 rounded-xl font-semibold mt-6">Add Material</button>
+                            </form>
+                        </div>
+                        <div class="lg:col-span-2 bg-black/30 rounded-2xl p-6 border border-white/5">
+                            <h3 class="text-lg font-semibold text-white mb-5">All Materials</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr class="border-b border-white/10">
+                                            <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Title</th>
+                                            <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Type</th>
+                                            <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="materials-table" class="divide-y divide-white/5"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-schedule" class="section hidden fade-in">
+                    <div class="bg-black/30 rounded-2xl p-6 border border-white/5 mb-6">
+                        <h3 class="text-lg font-semibold text-white mb-5">Add Class Schedule</h3>
+                        <form id="add-schedule-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Title</label>
+                                <input type="text" id="schedule-title" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-white/30 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Day</label>
+                                <select id="schedule-day" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-white/30 outline-none transition">
+                                    <option value="0" class="bg-black">Sunday</option>
+                                    <option value="1" class="bg-black">Monday</option>
+                                    <option value="2" class="bg-black">Tuesday</option>
+                                    <option value="3" class="bg-black">Wednesday</option>
+                                    <option value="4" class="bg-black">Thursday</option>
+                                    <option value="5" class="bg-black">Friday</option>
+                                    <option value="6" class="bg-black">Saturday</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Start</label>
+                                <input type="time" id="schedule-start" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-white/30 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">End</label>
+                                <input type="time" id="schedule-end" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-white/30 outline-none transition">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" class="btn-dark w-full py-3.5 rounded-xl font-semibold">Add Schedule</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="bg-black/30 rounded-2xl p-6 border border-white/5">
+                        <h3 class="text-lg font-semibold text-white mb-5">Weekly Schedule</h3>
+                        <div id="schedule-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                    </div>
+                </div>
+
+                <div id="section-announcements" class="section hidden fade-in">
+                    <div class="bg-black/30 rounded-2xl p-6 border border-white/5 mb-6">
+                        <h3 class="text-lg font-semibold text-white mb-5">Create Announcement</h3>
+                        <form id="add-announcement-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Title</label>
+                                <input type="text" id="announcement-title" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-white/30 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Content</label>
+                                <textarea id="announcement-content" rows="4" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-white/30 outline-none transition resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Priority</label>
+                                <select id="announcement-priority" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-white/30 outline-none transition">
+                                    <option value="low" class="bg-black">Low</option>
+                                    <option value="normal" class="bg-black" selected>Normal</option>
+                                    <option value="high" class="bg-black">High</option>
+                                    <option value="urgent" class="bg-black">Urgent</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-dark w-full py-3.5 rounded-xl font-semibold mt-4">Publish</button>
+                        </form>
+                    </div>
+                    <div class="bg-black/30 rounded-2xl p-6 border border-white/5">
+                        <h3 class="text-lg font-semibold text-white mb-5">All Announcements</h3>
+                        <div id="announcements-table" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <div id="section-payments" class="section hidden fade-in">
+                    <div class="bg-black/30 rounded-2xl p-6 border border-white/5">
+                        <h3 class="text-lg font-semibold text-white mb-5">Pending Payments</h3>
+                        <div id="payments-list" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <div id="section-attendance" class="section hidden fade-in">
+                    <div class="bg-black/30 rounded-2xl p-6 border border-white/5 mb-6">
+                        <h3 class="text-lg font-semibold text-white mb-5">Mark Attendance</h3>
+                        <form id="mark-attendance-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Student</label>
+                                <select id="attendance-student" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-white/30 outline-none transition"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Date</label>
+                                <input type="date" id="attendance-date" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-white/30 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Status</label>
+                                <select id="attendance-status" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-white/30 outline-none transition">
+                                    <option value="present" class="bg-black">Present</option>
+                                    <option value="absent" class="bg-black">Absent</option>
+                                    <option value="late" class="bg-black">Late</option>
+                                    <option value="excused" class="bg-black">Excused</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" class="btn-dark w-full py-3.5 rounded-xl font-semibold">Mark</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="bg-black/30 rounded-2xl p-6 border border-white/5">
+                        <h3 class="text-lg font-semibold text-white mb-5">Attendance Records</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-white/10">
+                                        <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Student</th>
+                                        <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Date</th>
+                                        <th class="text-left py-3 px-4 text-sm font-medium text-white/50">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-table" class="divide-y divide-white/5"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
+
+    <script type="module" src="./js/admin.js"></script>
+</body>
+</html>
