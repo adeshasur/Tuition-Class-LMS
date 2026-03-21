@@ -395,18 +395,22 @@ async function handleMarkAttendance(e) {
     const date = document.getElementById('attendance-date').value;
     const status = document.getElementById('attendance-status').value;
 
-    const { error } = await supabase.from(TABLES.ATTENDANCE).upsert({
+    const { error } = await supabase.from(TABLES.ATTENDANCE).insert({
         student_id: studentId,
         date,
         status,
         marked_by: getCurrentUser().id
-    }, { onConflict: 'student_id,date' });
+    });
 
     if (!error) {
         showToast('Attendance marked!', 'success');
         loadAttendance();
+    } else {
+        console.error('Attendance Error:', error);
+        showToast('Error: ' + error.message, 'error');
     }
 }
+
 
 async function loadQuizzes() {
     const { data: quizzes } = await supabase
