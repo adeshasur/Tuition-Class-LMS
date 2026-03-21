@@ -19,8 +19,10 @@ async function init() {
         loadSchedules(),
         loadAnnouncements(),
         loadPayments(),
-        loadAttendance()
+        loadAttendance(),
+        loadQuizzes()
     ]);
+
 
     showSection('overview');
 }
@@ -31,6 +33,9 @@ function setupEventListeners() {
     document.getElementById('add-schedule-form').addEventListener('submit', handleAddSchedule);
     document.getElementById('add-announcement-form').addEventListener('submit', handleAddAnnouncement);
     document.getElementById('mark-attendance-form').addEventListener('submit', handleMarkAttendance);
+    document.getElementById('add-quiz-form').addEventListener('submit', handleAddQuiz);
+    document.getElementById('add-question-form').addEventListener('submit', handleAddQuestion);
+
     
     document.getElementById('material-type').addEventListener('change', (e) => {
         const urlGroup = document.getElementById('url-input-group');
@@ -397,7 +402,138 @@ async function handleMarkAttendance(e) {
     }
 }
 
+async function loadQuizzes() {
+    const { data: quizzes } = await supabase
+        .from(TABLES.QUIZZES)
+        .select('*, quiz_questions(count)')
+        .order('created_at', { ascending: false });
+
+    const tbody = document.querySelector('#quizzes-table');
+    tbody.innerHTML = quizzes?.map(q => `
+        <tr class="hover:bg-white/5 transition">
+            <td class="py-4 px-4 font-medium text-white">${q.title}</td>
+            <td class="py-4 px-4 text-white/60">${q.quiz_questions?.[0]?.count || 0} Questions</td>
+            <td class="py-4 px-4">
+                <span class="px-3 py-1.5 rounded-full text-xs font-semibold ${q.is_active ? 'bg-white text-black' : 'bg-white/10 text-white/60'}">
+                    ${q.is_active ? 'Active' : 'Draft'}
+                </span>
+            </td>
+            <td class="py-4 px-4">
+                <button onclick="showQuestionEditor('${q.id}', '${q.title}')" class="text-white hover:underline font-medium transition">Edit Qs</button>
+                <span class="mx-2 text-white/20">|</span>
+                <button onclick="toggleQuizStatus('${q.id}', ${q.is_active})" class="text-white/60 hover:text-white transition">${q.is_active ? 'Draft' : 'Publish'}</button>
+                <span class="mx-2 text-white/20">|</span>
+                <button onclick="deleteQuiz('${q.id}')" class="text-white/40 hover:text-red-400 transition">Delete</button>
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="4" class="py-8 text-center text-white/40">No quizzes found</td></tr>';
+}
+
+async function handleAddQuiz(e) {
+    e.preventDefault();
+    const user = getCurrentUser();
+    const title = document.getElementById('quiz-title').value;
+    const description = document.getElementById('quiz-description').value;
+    const duration = parseInt(document.getElementById('quiz-duration').value);
+    const passing = parseInt(document.getElementById('quiz-passing').value);
+
+    const { error } = await supabase.from(TABLES.QUIZZES).insert({
+        title, description, duration_minutes: duration, passing_score: passing, 
+        is_active: false, created_by: user.id
+    });
+
+    if (!error) {
+        document.getElementById('add-quiz-form').reset();
+        showToast('Quiz created! Now add some questions.', 'success');
+        loadQuizzes();
+    }
+}
+
+window.toggleQuizStatus = async function(id, currentStatus) {
+    await supabase.from(TABLES.QUIZZES).update({ is_active: !currentStatus }).eq('id', id);
+    showToast(`Quiz ${!currentStatus ? 'published' : 'moved to draft'}`, 'success');
+    loadQuizzes();
+};
+
+window.deleteQuiz = async function(id) {
+    if (confirm('Delete this quiz and all its questions?')) {
+        await supabase.from(TABLES.QUIZZES).delete().eq('id', id);
+        showToast('Quiz deleted', 'success');
+        loadQuizzes();
+    }
+};
+
+window.showQuestionEditor = async function(id, title) {
+    document.getElementById('current-quiz-id').value = id;
+    document.getElementById('current-quiz-title').textContent = title;
+    document.getElementById('quiz-question-editor').classList.remove('hidden');
+    document.getElementById('quiz-question-editor').scrollIntoView({ behavior: 'smooth' });
+    loadQuestions(id);
+};
+
+window.hideQuestionEditor = function() {
+    document.getElementById('quiz-question-editor').classList.add('hidden');
+};
+
+async function loadQuestions(quizId) {
+    const { data: questions } = await supabase
+        .from(TABLES.QUIZ_QUESTIONS)
+        .select('*')
+        .eq('quiz_id', quizId)
+        .order('order_index');
+
+    const container = document.getElementById('questions-list');
+    container.innerHTML = questions?.map((q, idx) => `
+        <div class="p-5 rounded-xl bg-black/40 border border-white/5">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div class="flex gap-4">
+                    <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-sm font-bold text-white">${idx + 1}</span>
+                    <p class="text-white font-medium">${q.question}</p>
+                </div>
+                <button onclick="deleteQuestion('${q.id}', '${quizId}')" class="text-white/30 hover:text-red-400 transition">✕</button>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pl-12">
+                ${q.options.map((opt, i) => `
+                    <div class="text-sm ${i === q.correct_answer - 1 ? 'text-green-400 font-bold' : 'text-white/40'}">
+                        ${i + 1}. ${opt}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `).join('') || '<p class="text-white/30 text-center py-4">No questions added yet.</p>';
+}
+
+async function handleAddQuestion(e) {
+    e.preventDefault();
+    const quiz_id = document.getElementById('current-quiz-id').value;
+    const question = document.getElementById('question-text').value;
+    const correct_answer = parseInt(document.getElementById('correct-opt').value);
+    const options = Array.from(document.querySelectorAll('.quiz-opt')).map(opt => opt.value);
+
+    const { data: currentQs } = await supabase.from(TABLES.QUIZ_QUESTIONS).select('id').eq('quiz_id', quiz_id);
+    const order_index = (currentQs?.length || 0) + 1;
+
+    const { error } = await supabase.from(TABLES.QUIZ_QUESTIONS).insert({
+        quiz_id, question, options, correct_answer, order_index, points: 10
+    });
+
+    if (!error) {
+        document.getElementById('add-question-form').reset();
+        showToast('Question added!', 'success');
+        loadQuestions(quiz_id);
+        loadQuizzes();
+    }
+}
+
+window.deleteQuestion = async function(id, quizId) {
+    await supabase.from(TABLES.QUIZ_QUESTIONS).delete().eq('id', id);
+    showToast('Question removed', 'success');
+    loadQuestions(quizId);
+    loadQuizzes();
+};
+
 window.toggleDarkMode = function() {
+
     import('./auth.js').then(m => m.toggleDarkMode());
 };
 

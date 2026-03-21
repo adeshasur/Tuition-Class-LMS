@@ -187,6 +187,7 @@ export function showSection(section) {
         announcements: 'Announcements',
         payments: 'Payments',
         attendance: 'Attendance',
+        quizzes: 'Quiz Management',
         dashboard: 'Dashboard',
         settings: 'Settings'
     };
