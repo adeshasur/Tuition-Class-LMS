@@ -31,6 +31,41 @@ export async function login(mobile, pin) {
     return { success: true, user: data };
 }
 
+export async function signup(name, mobile, pin) {
+    const { data: existingUser, error: checkError } = await supabase
+        .from(TABLES.USERS)
+        .select('id')
+        .eq('mobile', mobile)
+        .maybeSingle();
+
+    if (checkError) {
+        return { success: false, error: 'Database error occurred' };
+    }
+
+    if (existingUser) {
+        return { success: false, error: 'Mobile number already registered' };
+    }
+
+    const { data, error } = await supabase
+        .from(TABLES.USERS)
+        .insert({
+            name,
+            mobile,
+            pin,
+            status: 'inactive',
+            is_admin: false
+        })
+        .select()
+        .single();
+
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    return { success: true, user: data };
+}
+
+
 export function logout() {
     localStorage.removeItem(AUTH_USER_KEY);
     window.location.href = 'index.html';
