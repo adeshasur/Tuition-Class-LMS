@@ -24,8 +24,14 @@ async function init() {
     ]);
 
 
+    const attendanceDate = document.getElementById('attendance-date');
+    if (attendanceDate) {
+        attendanceDate.value = new Date().toISOString().split('T')[0];
+    }
+
     showSection('overview');
 }
+
 
 function setupEventListeners() {
     document.getElementById('add-user-form').addEventListener('submit', handleAddUser);
