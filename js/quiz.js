@@ -283,3 +283,9 @@ window.closeQuizModal = function() {
     currentQuestionIndex = 0;
     answers = {};
 };
+window.startQuiz = startQuiz;
+window.selectAnswer = selectAnswer;
+window.nextQuestion = nextQuestion;
+window.prevQuestion = prevQuestion;
+window.submitQuiz = submitQuiz;
+window.closeQuizModal = closeQuizModal;
