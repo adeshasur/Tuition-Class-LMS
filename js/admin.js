@@ -371,11 +371,16 @@ window.rejectPayment = async function(paymentId) {
 };
 
 async function loadAttendance() {
-    const { data: attendance } = await supabase
+    const { data: attendance, error } = await supabase
         .from(TABLES.ATTENDANCE)
-        .select('*, users(name), schedules(title)')
+        .select('*, users!student_id(name), schedules(title)')
         .order('date', { ascending: false })
         .limit(50);
+
+    if (error) {
+        console.error('Attendance Load Error:', error);
+        return;
+    }
 
     const tbody = document.getElementById('attendance-table');
     tbody.innerHTML = attendance?.map(a => `
@@ -388,6 +393,7 @@ async function loadAttendance() {
         </tr>
     `).join('') || '<tr><td colspan="3" class="py-8 text-center text-white/40">No records</td></tr>';
 }
+
 
 async function handleMarkAttendance(e) {
     e.preventDefault();
